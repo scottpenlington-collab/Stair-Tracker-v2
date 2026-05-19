@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Bullnose"/>
+<meta name="theme-color" content="#0E0F11"/>
+<title>Treads + Riser</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E0F11;--surface:#16181C;--surface2:#1E2127;--border:#2A2D35;--text:#E8EAF0;--muted:#6B7180;--night:#3B82F6;--day:#22C55E;--target:#EF4444;--daily:#A78BFA;--forecast:#34D399;--warn:#F59E0B;--accent:#F59E0B;--radius:10px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;overscroll-behavior:none;}
+#app{max-width:480px;margin:0 auto;padding:0 0 90px;min-height:100vh;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;}
+.header-info{flex:1;min-width:0;}
+.header-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1;}
+.header-week{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+#weekStartInput{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px;font-family:'DM Mono',monospace;padding:5px 8px;border-radius:6px;width:auto;}
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:11px 4px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.section{display:none;padding:12px;}
+.section.active{display:block;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;line-height:1;}
+.stat-val.good{color:var(--day);}
+.stat-val.bad{color:var(--target);}
+.stat-val.warn{color:var(--warn);}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px 8px;margin-bottom:12px;}
+.chart-canvas{width:100%!important;height:200px!important;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:12px;padding:0 2px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);}
+.leg-bar{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.leg-line{width:16px;height:0;flex-shrink:0;}
+.leg-solid{border-top:2px solid;}
+.leg-dash{border-top:2px dashed;}
+.shift-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+.shift-table-head{display:grid;grid-template-columns:1fr 46px 50px 58px;gap:6px;padding:7px 12px;background:var(--surface2);font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.shift-row{display:grid;grid-template-columns:1fr 46px 50px 58px;gap:6px;padding:9px 12px;border-top:1px solid var(--border);align-items:center;}
+.shift-row.complete{background:rgba(34,197,94,.04);}
+.shift-name{font-weight:500;font-size:13px;}
+.shift-type{font-size:10px;font-weight:600;}
+.shift-type.night{color:var(--night);}
+.shift-type.day{color:var(--day);}
+.shift-target{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+.shift-built-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:10px;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+.card-sub{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.4;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+input[type=number],input[type=date],select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:9px 11px;border-radius:8px;width:100%;-moz-appearance:textfield;appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button{display:none;}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+select option{background:var(--surface2);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+.settings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.shift-entry-row{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-top:1px solid var(--border);gap:10px;}
+.shift-entry-info{flex:1;min-width:0;}
+.shift-entry-name{font-weight:500;font-size:13px;}
+.shift-entry-meta{font-size:11px;color:var(--muted);margin-top:1px;font-family:'DM Mono',monospace;}
+input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-width:64px;flex:0 0 64px;font-size:14px;font-weight:500;text-align:center;padding:7px 4px;}
+.shift-entry-input.on-target{border-color:var(--day)!important;color:var(--day)!important;box-shadow:0 0 0 2px rgba(34,197,94,.15);}
+.shift-entry-input.off-target{border-color:var(--target)!important;color:var(--target)!important;animation:flash-red 1.2s ease-in-out infinite;}
+@keyframes flash-red{0%,100%{box-shadow:0 0 0 2px rgba(239,68,68,.15);}50%{box-shadow:0 0 0 4px rgba(239,68,68,.45);}}
+.btn{display:block;width:100%;padding:12px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;transition:opacity .15s;}
+.btn:active{opacity:.8;}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:transparent;border:1px solid var(--target);color:var(--target);margin-top:6px;}
+.btn-sm{padding:7px 12px;font-size:12px;width:auto;display:inline-block;}
+.fc-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:4px 10px;border-radius:5px;margin-top:8px;}
+.fc-badge.good{background:rgba(34,197,94,.15);color:var(--day);}
+.fc-badge.warn{background:rgba(245,158,11,.15);color:var(--warn);}
+.fc-badge.bad{background:rgba(239,68,68,.15);color:var(--target);}
+.fc-badge.none{display:none;}
+.load-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(52,211,153,.12);color:var(--forecast);margin-right:4px;}
+.nw-day{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border);font-size:12px;}
+.nw-day-label{color:var(--muted);font-family:'DM Mono',monospace;}
+.nw-day-val{font-family:'DM Mono',monospace;font-weight:500;}
+.sheet-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-bottom:8px;}
+.sheet-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sheet-dot.ok{background:var(--day);}
+.sheet-dot.err{background:var(--target);}
+.sheet-dot.loading{background:var(--warn);animation:pulse 1s infinite;}
+.sync-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;max-width:480px;margin:0 auto;z-index:50;}
+.sync-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--day);display:inline-block;flex-shrink:0;}
+.sync-dot.offline{background:var(--target);}
+.sync-dot.connecting{background:var(--warn);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync-btn{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 8px;}
+.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;border-radius:8px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:20px;}
+#loading.hidden{display:none;}
+.loading-logo{animation:bob .8s ease-in-out infinite alternate;}
+@keyframes bob{from{transform:translateY(0);}to{transform:translateY(-6px);}}
+.loading-text{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+.back-btn{background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px;}
+</style>
+</head>
+<body>
+<div id="loading">
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" class="loading-logo">
+    <rect x="4" y="40" width="56" height="16" rx="3" fill="#3B82F6"/>
+    <rect x="4" y="40" width="16" height="16" rx="3" fill="#F59E0B"/>
+    <path d="M4 40 Q32 30 60 40" stroke="#34D399" stroke-width="2" fill="none"/>
+    <path d="M5 38 L20 28 L38 20 L55 12" stroke="#34D399" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+  </svg>
+  <div class="loading-text">Loading Treads + Riser…</div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="header">
+    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" style="flex-shrink:0;">
+      <rect x="2" y="26" width="34" height="9" rx="2" fill="#3B82F6"/>
+      <rect x="2" y="26" width="9" height="9" rx="2" fill="#F59E0B"/>
+      <path d="M2 26 Q19 20 36 26" stroke="#34D399" stroke-width="1.5" fill="none"/>
+    </svg>
+    <div class="header-info">
+      <div class="header-title">Treads + Riser</div>
+      <div class="header-week" id="hdr-week">Loading…</div>
+    </div>
+    <input type="date" id="weekStartInput" onchange="onWeekChange()"/>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="showTab('entry')">Enter</button>
+    <button class="tab" onclick="showTab('forecast')">Forecast</button>
+    <button class="tab" onclick="showTab('settings')">Settings</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Built</div><div class="stat-val" id="st-built">0</div></div>
+      <div class="stat"><div class="stat-label">Target to date</div><div class="stat-val" id="st-exp">0</div></div>
+      <div class="stat"><div class="stat-label">Variance</div><div class="stat-val" id="st-var">—</div></div>
+      <div class="stat"><div class="stat-label">Forecast EoW</div><div class="stat-val" id="st-fc">—</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart" class="chart-canvas"></canvas></div>
+    <div class="legend">
+      <div class="legend-item"><span class="leg-bar" style="background:var(--night)"></span>Night</div>
+      <div class="legend-item"><span class="leg-bar" style="background:var(--day)"></span>Day</div>
+      <div class="legend-item"><span class="leg-line leg-solid" style="border-color:var(--target)"></span>Target</div>
+      <div class="legend-item"><span class="leg-line leg-dash" style="border-color:var(--daily)"></span>Daily (cum.)</div>
+      <div class="legend-item"><span class="leg-line leg-dash" style="border-color:var(--forecast)"></span>Forecast</div>
+    </div>
+    <div class="shift-table">
+      <div class="shift-table-head"><span>Shift</span><span>Type</span><span>Target</span><span>Built</span></div>
+      <div id="dash-rows"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:7px;">Forecast position</div>
+      <div id="dash-fc-summary"><div style="font-size:12px;color:var(--muted);">Set current position on the Forecast tab.</div></div>
+    </div>
+    <div class="card" id="next-week-panel" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="card-title" style="margin-bottom:0;">Next week</div>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);" id="nw-week-label"></span>
+      </div>
+      <div id="nw-days"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--muted);">Total next week</span>
+        <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:14px;" id="nw-total">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENTRY -->
+  <div class="section" id="tab-entry">
+    <div class="card"><div class="card-title">Shift production</div><div class="card-sub">Enter units built per shift. Green = target met · Red flashing = below target.</div></div>
+    <div class="shift-table" id="entry-rows"></div>
+    <div style="height:10px;"></div>
+    <div class="card">
+      <div class="card-title">Daily units per day</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="sheet-status" style="margin-bottom:0;"><span class="sheet-dot loading" id="sheet-dot"></span><span id="sheet-label">Loading…</span></div>
+        <button class="btn btn-ghost btn-sm" onclick="fetchSheet()">&#8635; Refresh</button>
+      </div>
+      <div class="card-sub" style="margin-bottom:8px;">Auto-filled from Google Sheet. Edit manually if needed.</div>
+      <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;" id="this-week-label-entry">This week</p>
+      <div class="grid-5" id="daily-inputs"></div>
+      <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;" id="next-week-label-entry">Next week</p>
+      <div class="grid-5" id="daily-inputs-next"></div>
+    </div>
+  </div>
+
+  <!-- FORECAST -->
+  <div class="section" id="tab-forecast">
+    <div class="card">
+      <div class="card-title">Current position</div>
+      <div class="card-sub">Select your shift, enter the load number being built and how many are completed so far.</div>
+      <div class="grid-2" style="margin-bottom:10px;">
+        <div class="field"><label>On shift</label><select id="fc-shift" onchange="onFcChange()"></select></div>
+        <div class="field"><label>Current load ID</label><input type="text" id="fc-load" placeholder="e.g. #113564" oninput="onFcChange()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:9px 11px;border-radius:8px;width:100%;"/></div>
+        <div class="field"><label>Made in this load</label><input type="number" min="0" id="fc-made" placeholder="e.g. 17" oninput="onFcChange()"/></div>
+        <div class="field" style="justify-content:flex-end;"><label>&nbsp;</label><button class="btn btn-ghost" onclick="clearForecast()" style="padding:9px;font-size:13px;">Clear</button></div>
+      </div>
+      <div id="fc-badge" class="fc-badge none"></div>
+    </div>
+    <div class="card" id="fc-breakdown-card" style="display:none;">
+      <div class="stat-label" style="margin-bottom:9px;">Shift-by-shift load forecast</div>
+      <div id="fc-breakdown"></div>
+    </div>
+    <div class="card">
+      <div class="stat-label" style="margin-bottom:5px;">Forecast end of week</div>
+      <div class="stat-val" id="fc-eow" style="font-size:38px;">—</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:5px;">Weekly target: <span id="fc-wtarget" style="color:var(--text);font-family:'DM Mono',monospace;">—</span></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section" id="tab-settings">
+    <div class="card">
+      <div class="card-title">Week</div>
+      <div class="grid-2">
+        <div class="field"><label>Weekly target</label><input type="number" id="set-weekly" min="0" oninput="onSettingChange()"/></div>
+        <div class="field"><label>Week start</label><input type="date" id="set-week-start" onchange="onWeekChange()"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Shift targets</div>
+      <div class="card-sub">Expected units per shift.</div>
+      <div class="settings-grid" id="shift-target-inputs"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Reset data</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clears built data only. Settings kept. Affects all viewers.</div>
+      <button class="btn btn-danger" onclick="confirmReset()">Reset this week's built data</button>
+    </div>
+  </div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-status"><span class="sync-dot connecting" id="sync-dot"></span><span id="sync-label">Connecting…</span></div>
+  <button class="sync-btn" onclick="forceSyncNow()">&#8635; Sync</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig={
+  apiKey:"AIzaSyCLbgeJuQ6xvWKOcXZw_DLYEwLxd7dBkck",
+  authDomain:"stair-assembly-forecast.firebaseapp.com",
+  databaseURL:"https://stair-assembly-forecast-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"stair-assembly-forecast",
+  storageBucket:"stair-assembly-forecast.firebasestorage.app",
+  messagingSenderId:"87352661446",
+  appId:"1:87352661446:web:47301077abf27b509b0ec7"
+};
+const fbApp=initializeApp(firebaseConfig);
+const db=getDatabase(fbApp);
+const DATA_REF=ref(db,'treads/v1');
+
+const SHEET_URL='https://script.google.com/macros/s/AKfycbwRWmh-jF9O1jWDM1GePq-IRGO2luEufeNe6nk8sCxKy1snwm09MTS2rNbPtxlNpn0P/exec';
+
+const SHIFTS=[
+  {id:'s0',label:'Sun night',day:null,type:'Night'},
+  {id:'s1',label:'Mon day',day:'mon',type:'Day'},
+  {id:'s2',label:'Mon night',day:'mon',type:'Night'},
+  {id:'s3',label:'Tue day',day:'tue',type:'Day'},
+  {id:'s4',label:'Tue night',day:'tue',type:'Night'},
+  {id:'s5',label:'Wed day',day:'wed',type:'Day'},
+  {id:'s6',label:'Wed night',day:'wed',type:'Night'},
+  {id:'s7',label:'Thu day',day:'thu',type:'Day'},
+  {id:'s8',label:'Fri day',day:'fri',type:'Day',short:true},
+];
+const DAYS=['mon','tue','wed','thu','fri'];
+const DAY_LABELS={mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri'};
+const DAY_FULL={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday'};
+const ORDERED_DAYS=['mon','tue','wed','thu','fri'];
+const DEFAULT_TARGETS=[0,0,0,0,0,0,0,0,0];
+
+let sheetLoads=[];
+let thisWeekByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+let nextWeekByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+
+let state={
+  weeklyTarget:0,weekStart:getMondayStr(),
+  shiftTargets:[...DEFAULT_TARGETS],
+  built:{},
+  dailyParts:{mon:0,tue:0,wed:0,thu:0,fri:0},
+  dailyPartsNext:{mon:0,tue:0,wed:0,thu:0,fri:0},
+  forecast:{shiftIdx:'',currentDay:'',madeSoFar:''}
+};
+let isSaving=false,saveTimer=null;
+
+function pushToFirebase(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    isSaving=true;setSyncStatus('saving');
+    set(DATA_REF,state).then(()=>setSyncStatus('live')).catch(()=>setSyncStatus('offline'));
+  },400);
+}
+function setSyncStatus(s){
+  const dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
+  if(s==='live'){dot.className='sync-dot';lbl.textContent='Live · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+  else if(s==='saving'){dot.className='sync-dot connecting';lbl.textContent='Saving…';}
+  else{dot.className='sync-dot offline';lbl.textContent='Offline';}
+}
+function forceSyncNow(){
+  setSyncStatus('saving');
+  get(DATA_REF).then(snap=>{if(snap.exists()){Object.assign(state,snap.val());fullRebuild();setSyncStatus('live');toast('Synced');}}).catch(()=>setSyncStatus('offline'));
+  fetchSheet();
+}
+window.forceSyncNow=forceSyncNow;
+
+onValue(DATA_REF,snap=>{
+  if(snap.exists()&&!isSaving){
+    Object.assign(state,snap.val());
+    if(!state.dailyPartsNext)state.dailyPartsNext={mon:0,tue:0,wed:0,thu:0,fri:0};
+    if(!state.dailyParts)state.dailyParts={mon:0,tue:0,wed:0,thu:0,fri:0};
+    while(state.shiftTargets.length<SHIFTS.length)state.shiftTargets.push(0);
+  }
+  isSaving=false;setSyncStatus('live');
+  fullRebuild();
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('app').style.display='block';
+},()=>{
+  setSyncStatus('offline');
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('app').style.display='block';
+  toast('Firebase offline — local mode');
+});
+
+// ── Sheet ─────────────────────────────────────────────────────
+function setSheetStatus(s,msg){
+  const dot=document.getElementById('sheet-dot'),lbl=document.getElementById('sheet-label');
+  if(dot)dot.className='sheet-dot '+(s==='ok'?'ok':s==='loading'?'loading':'err');
+  if(lbl)lbl.textContent=msg;
+}
+function parseDate(str){
+  str=str.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const m=str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+  if(m){let y=parseInt(m[3]);if(y<100)y+=2000;return`${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;}
+  try{const d=new Date(str);if(!isNaN(d.getTime())){const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return`${y}-${mo}-${dd}`;}}catch(e){}
+  return null;
+}
+function toLocalDateStr(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`;}
+function getMondayStr(){const t=new Date(),dw=t.getDay(),mon=new Date(t);mon.setDate(t.getDate()-(dw===0?6:dw-1));return toLocalDateStr(mon);}
+function formatWeekLabel(str){const d=new Date(str+'T00:00:00');return 'w/c '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function getWeekDates(mondayStr){
+  const mon=new Date(mondayStr+'T00:00:00'),map={};
+  const sun=new Date(mon);sun.setDate(mon.getDate()-1);map['sun']=toLocalDateStr(sun);
+  ['mon','tue','wed','thu','fri','sat'].forEach((d,i)=>{const dt=new Date(mon);dt.setDate(mon.getDate()+i);map[d]=toLocalDateStr(dt);});
+  return map;
+}
+function processSheetData(loads){
+  const ws=state.weekStart||getMondayStr();
+  const thisDates=getWeekDates(ws);
+  const nextMon=new Date(ws+'T00:00:00');nextMon.setDate(nextMon.getDate()+7);
+  const nextDates=getWeekDates(toLocalDateStr(nextMon));
+  thisWeekByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+  nextWeekByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+  loads.forEach(l=>{
+    const td=DAYS.find(d=>thisDates[d]===l.date);
+    if(td){thisWeekByDay[td].push(l);return;}
+    const nd=DAYS.find(d=>nextDates[d]===l.date);
+    if(nd)nextWeekByDay[nd].push(l);
+  });
+  // Auto-fill daily parts from sheet
+  const nd={mon:0,tue:0,wed:0,thu:0,fri:0};
+  DAYS.forEach(d=>nd[d]=thisWeekByDay[d].reduce((a,l)=>a+l.qty,0));
+  if(DAYS.some(d=>nd[d]>0)){state.dailyParts=nd;}
+  const nn={mon:0,tue:0,wed:0,thu:0,fri:0};
+  DAYS.forEach(d=>nn[d]=nextWeekByDay[d].reduce((a,l)=>a+l.qty,0));
+  if(DAYS.some(d=>nn[d]>0)){state.dailyPartsNext=nn;}
+  if(DAYS.some(d=>nd[d]>0||nn[d]>0))pushToFirebase();
+}
+async function fetchSheet(){
+  setSheetStatus('loading','Loading sheet…');
+  try{
+    const res=await fetch(SHEET_URL,{signal:AbortSignal.timeout(12000)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    if(!Array.isArray(json))throw new Error('Invalid response');
+    sheetLoads=json.map(row=>({
+      date:parseDate(String(row.date||'')),
+      loadNo:String(row.loadNo||'').trim(),
+      qty:parseInt(row.qty,10)||0,
+      parts:parseInt(row.parts,10)||0
+    })).filter(l=>l.date&&l.loadNo&&(l.qty>0||l.parts>0));
+    processSheetData(sheetLoads);
+    setSheetStatus('ok',`Sheet loaded · ${sheetLoads.length} loads`);
+    buildDailyInputs();buildNextWeekPanel();refreshAll();
+    toast('Sheet synced · '+sheetLoads.length+' loads');
+  }catch(e){
+    console.error(e);
+    const hasData=DAYS.some(d=>(state.dailyParts[d]||0)>0);
+    setSheetStatus(hasData?'ok':'err',hasData?'Using saved data':'Sheet unavailable — edit manually');
+  }
+}
+window.fetchSheet=fetchSheet;
+
+// ── Data calcs ────────────────────────────────────────────────
+function getCumBuilt(){let r=0;return SHIFTS.map(s=>{if(state.built[s.id]!==undefined){r+=state.built[s.id];return r;}return null;});}
+function getCumTargets(){let r=0;return state.shiftTargets.map(t=>{r+=(t||0);return r;});}
+function getDailyCum(){
+  let running=0,lastDay=null;
+  return SHIFTS.map(s=>{
+    if(!s.day)return null;
+    if(s.day!==lastDay){running+=(state.dailyParts[s.day]||0);lastDay=s.day;}
+    return running>0?running:null;
+  });
+}
+function getForecastLine(){
+  const idx=parseInt(state.forecast.shiftIdx);
+  if(isNaN(idx)||state.forecast.shiftIdx==='')return null;
+  const line=new Array(SHIFTS.length).fill(null);
+  let cb=0;
+  for(let i=0;i<idx;i++){cb+=state.built[SHIFTS[i].id]!==undefined?state.built[SHIFTS[i].id]:state.shiftTargets[i]||0;line[i]=cb;}
+  let run=cb;
+  for(let i=idx;i<SHIFTS.length;i++){run+=(state.built[SHIFTS[i].id]!==undefined?state.built[SHIFTS[i].id]:state.shiftTargets[i]||0);line[i]=Math.round(run);}
+  return line;
+}
+
+// ── Load buckets ──────────────────────────────────────────────
+function getLoadBuckets(){
+  const all=[];
+  DAYS.forEach(d=>(thisWeekByDay[d]||[]).forEach((l,i)=>all.push({label:DAY_FULL[d],loadNo:l.loadNo,day:d,week:'this',loadIdx:i,loadCount:(thisWeekByDay[d]||[]).length,total:l.qty})));
+  DAYS.forEach(d=>(nextWeekByDay[d]||[]).forEach((l,i)=>all.push({label:'Next '+DAY_FULL[d],loadNo:l.loadNo,day:'nw_'+d,week:'next',loadIdx:i,loadCount:(nextWeekByDay[d]||[]).length,total:l.qty})));
+  return all;
+}
+function getForecastBuckets(){
+  const idx=parseInt(state.forecast.shiftIdx);
+  if(isNaN(idx)||state.forecast.shiftIdx==='')return null;
+  const hasDailyData=ORDERED_DAYS.some(d=>(state.dailyParts[d]||0)>0);
+  if(!hasDailyData)return{noDailyData:true,idx};
+  const loadBuckets=getLoadBuckets();
+  let buckets;
+  if(loadBuckets.length>0){
+    buckets=loadBuckets;
+  }else{
+    const dp=state.dailyParts||{},dpn=state.dailyPartsNext||{};
+    buckets=[
+      ...ORDERED_DAYS.map(d=>({label:DAY_FULL[d],loadNo:'',day:d,week:'this',loadIdx:0,loadCount:1,total:parseInt(dp[d],10)||0})).filter(b=>b.total>0),
+      ...ORDERED_DAYS.map(d=>({label:'Next '+DAY_FULL[d],loadNo:'',day:'nw_'+d,week:'next',loadIdx:0,loadCount:1,total:parseInt(dpn[d],10)||0})).filter(b=>b.total>0),
+    ];
+  }
+  if(!buckets.length)return{noDailyData:true,idx};
+  let bucketIdx=0,rem=0;
+  const cd=state.forecast.currentDay,ms=parseInt(state.forecast.madeSoFar,10);
+  if(cd&&!isNaN(ms)&&ms>=0){
+    let dayConsumed=0,found=false;
+    for(let b=0;b<buckets.length;b++){
+      const bDay=buckets[b].day.replace('nw_','');
+      if(bDay===cd){
+        if(dayConsumed+buckets[b].total>ms){bucketIdx=b;rem=buckets[b].total-(ms-dayConsumed);found=true;break;}
+        dayConsumed+=buckets[b].total;
+      }
+    }
+    if(!found){
+      let pastDay=false;
+      bucketIdx=buckets.length;
+      for(let b=0;b<buckets.length;b++){
+        const bDay=buckets[b].day.replace('nw_','');
+        if(bDay===cd)pastDay=true;
+        else if(pastDay){bucketIdx=b;rem=buckets[b].total;break;}
+      }
+    }
+  }else{
+    let cb=0;
+    for(let i=0;i<idx;i++)cb+=state.built[SHIFTS[i].id]!==undefined?state.built[SHIFTS[i].id]:state.shiftTargets[i]||0;
+    let con=0;
+    for(let b=0;b<buckets.length;b++){
+      if(con+buckets[b].total>cb){bucketIdx=b;rem=(con+buckets[b].total)-cb;break;}
+      con+=buckets[b].total;
+      if(b===buckets.length-1){bucketIdx=0;rem=buckets[0].total;}
+    }
+  }
+  const shiftResults=[];let bIdx=bucketIdx,r=rem;
+  for(let i=idx;i<SHIFTS.length;i++){
+    const contribution=state.built[SHIFTS[i].id]!==undefined?state.built[SHIFTS[i].id]:state.shiftTargets[i]||0;
+    let todo=contribution;const segs=[];
+    while(todo>0){
+      if(bIdx>=buckets.length){segs.push({label:'Beyond schedule',loadNo:'',loadIdx:0,loadCount:1,amount:todo,ofTotal:0,startInDay:0,endInDay:0,isComplete:false,beyond:true});todo=0;break;}
+      if(r<=0){bIdx++;if(bIdx>=buckets.length){segs.push({label:'Beyond schedule',loadNo:'',loadIdx:0,loadCount:1,amount:todo,ofTotal:0,startInDay:0,endInDay:0,isComplete:false,beyond:true});todo=0;break;}r=buckets[bIdx].total;}
+      const take=Math.min(todo,r),sob=buckets[bIdx].total-r,b=buckets[bIdx];
+      segs.push({label:b.label,loadNo:b.loadNo,loadIdx:b.loadIdx,loadCount:b.loadCount,amount:take,startInDay:sob,endInDay:sob+take,ofTotal:b.total,isComplete:take>=r});
+      r-=take;todo-=take;
+    }
+    const isActual=state.built[SHIFTS[i].id]!==undefined;
+    shiftResults.push({shift:SHIFTS[i],shiftTarget:state.shiftTargets[i]||0,shiftActual:isActual?state.built[SHIFTS[i].id]:null,isCurrent:i===idx,segments:segs});
+  }
+  return{shiftResults,idx,hasDailyData:true};
+}
+
+// ── Rendering ─────────────────────────────────────────────────
+function buildLoadRow(seg){
+  if(seg.beyond)return`<div style="padding:8px 0;border-top:1px solid var(--border);font-size:12px;color:var(--warn);">+${seg.amount} beyond schedule</div>`;
+  const pct=seg.ofTotal>0?Math.round((seg.endInDay/seg.ofTotal)*100):0;
+  const spct=seg.ofTotal>0?Math.round((seg.startInDay/seg.ofTotal)*100):0;
+  const shiftPct=seg.ofTotal>0?Math.round((seg.amount/seg.ofTotal)*100):0;
+  const done=seg.isComplete?`<span style="background:rgba(34,197,94,.2);color:var(--day);font-size:9px;padding:1px 6px;border-radius:3px;margin-left:6px;">DONE</span>`:'';
+  const loadBadge=seg.loadNo?`<span style="background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;margin-right:6px;">Load ${seg.loadIdx+1}/${seg.loadCount}</span><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${seg.loadNo}</span>`:`<span style="font-size:11px;color:var(--muted);">${seg.label}</span>`;
+  return`<div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-top:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+      <span style="font-size:13px;font-weight:500;color:var(--text);">${seg.label}${done}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--forecast);white-space:nowrap;margin-left:8px;">builds ${seg.amount} <span style="color:var(--muted);font-size:10px;">/ ${seg.ofTotal}</span></span>
+    </div>
+    <div style="margin-bottom:6px;">${loadBadge}</div>
+    <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden;">
+      <div style="background:rgba(34,197,94,.25);height:100%;width:${spct}%;float:left;"></div>
+      <div style="background:var(--forecast);height:100%;width:${shiftPct}%;float:left;border-radius:0 2px 2px 0;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:3px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">
+      <span>${seg.startInDay} done before</span>
+      <span>${seg.endInDay}/${seg.ofTotal} after shift</span>
+    </div>
+  </div>`;
+}
+function buildForecastHTML(full){
+  const bd=getForecastBuckets();
+  if(!bd)return'<div style="font-size:12px;color:var(--muted);">Set current position on the Forecast tab.</div>';
+  if(bd.noDailyData)return'<div style="font-size:12px;color:var(--muted);">Enter daily unit figures on the Enter tab.</div>';
+  if(full){
+    return bd.shiftResults.map(r=>{
+      const isNow=r.isCurrent;
+      const typeTag=r.shift.type==='Night'?`<span style="font-size:10px;font-weight:600;color:var(--night);margin-left:6px;">NIGHT</span>`:`<span style="font-size:10px;font-weight:600;color:var(--day);margin-left:6px;">DAY</span>`;
+      const nowTag=isNow?`<span style="font-size:9px;background:rgba(245,158,11,.15);color:var(--accent);padding:1px 6px;border-radius:3px;margin-left:6px;">NOW</span>`:'';
+      const targetLine=r.shiftActual!==null?`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">actual <span style="color:var(--day);">${r.shiftActual}</span> / target ${r.shiftTarget}</span>`:`<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">target ${r.shiftTarget}</span>`;
+      return`<div style="padding:12px 0;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;">
+            <span style="font-size:14px;font-weight:700;color:${isNow?'var(--accent)':'var(--text)'};">${r.shift.label}</span>${typeTag}${nowTag}
+          </div>
+          ${targetLine}
+        </div>
+        ${r.segments.map(seg=>buildLoadRow(seg)).join('')}
+      </div>`;
+    }).join('');
+  }
+  // Dashboard compact — all shifts
+  const currentIdx=bd.shiftResults.findIndex(r=>r.isCurrent);
+  if(currentIdx<0)return'<div style="font-size:12px;color:var(--muted);">Set current position on the Forecast tab.</div>';
+  return bd.shiftResults.map((r,ri)=>{
+    const isNow=r.isCurrent;
+    const loads=r.segments.map(seg=>{
+      if(seg.beyond)return`<span style="color:var(--warn);">+${seg.amount} beyond</span>`;
+      const done=seg.isComplete?` <span style="color:var(--day);">&#10003;</span>`:'';
+      const id=seg.loadNo?`#${seg.loadNo.replace('#','')} `:'';
+      return`${id}${seg.endInDay}/${seg.ofTotal}${done}`;
+    }).join(' · ');
+    return`<div style="display:flex;gap:10px;padding:${ri>0?'6px 0 0':'4px 0'};${ri>0?'border-top:1px solid var(--border);margin-top:4px;':''}align-items:flex-start;">
+      <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:${isNow?'var(--accent)':'var(--muted)'};white-space:nowrap;min-width:72px;">${r.shift.label}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--forecast);line-height:1.6;">${loads}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Chart ─────────────────────────────────────────────────────
+let chart;
+function buildChart(){
+  const ctx=document.getElementById('mainChart');
+  if(chart)chart.destroy();
+  const ca=getCumBuilt();
+  chart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:SHIFTS.map(s=>s.label.replace(' ','\n')),datasets:[
+      {label:'Night',data:SHIFTS.map((s,i)=>s.type==='Night'?ca[i]:null),backgroundColor:'#3B82F6',borderRadius:3,order:4,yAxisID:'y'},
+      {label:'Day',data:SHIFTS.map((s,i)=>s.type==='Day'?ca[i]:null),backgroundColor:'#22C55E',borderRadius:3,order:4,yAxisID:'y'},
+      {label:'Target',data:getCumTargets(),type:'line',borderColor:'#EF4444',backgroundColor:'transparent',borderWidth:1.5,pointRadius:2,order:2,yAxisID:'y',tension:0},
+      {label:'Daily',data:getDailyCum(),type:'line',borderColor:'#A78BFA',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,order:1,yAxisID:'y',tension:0,spanGaps:false},
+      {label:'Forecast',data:getForecastLine(),type:'line',borderColor:'#34D399',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,3],pointRadius:3,pointStyle:'triangle',order:0,yAxisID:'y',tension:0,spanGaps:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1E2127',borderColor:'#2A2D35',borderWidth:1,titleFont:{family:'DM Mono,monospace',size:10},bodyFont:{family:'DM Mono,monospace',size:10},callbacks:{label:c=>c.parsed.y===null?null:`${c.dataset.label}: ${Math.round(c.parsed.y)}`}}},
+      scales:{x:{ticks:{color:'#6B7180',font:{size:8,family:'DM Mono,monospace'},maxRotation:30},grid:{color:'#2A2D35'}},y:{position:'left',ticks:{color:'#6B7180',font:{size:9,family:'DM Mono,monospace'}},grid:{color:'#2A2D35'},beginAtZero:true}}}
+  });
+}
+function buildDashRows(){
+  const c=document.getElementById('dash-rows');c.innerHTML='';
+  SHIFTS.forEach((s,i)=>{const b=state.built[s.id];const row=document.createElement('div');row.className='shift-row'+(b!==undefined?' complete':'');row.innerHTML=`<span class="shift-name">${s.label}</span><span class="shift-type ${s.type.toLowerCase()}">${s.type==='Night'?'NIGHT':'DAY'}</span><span class="shift-target">${state.shiftTargets[i]||0}</span><span class="shift-built-val">${b!==undefined?b:'—'}</span>`;c.appendChild(row);});
+}
+function buildEntryRows(){
+  const c=document.getElementById('entry-rows');c.innerHTML='';
+  SHIFTS.forEach((s,i)=>{
+    const v=state.built[s.id]!==undefined?state.built[s.id]:'';
+    const t=state.shiftTargets[i]||0;
+    const cls=state.built[s.id]===undefined?'':(state.built[s.id]>=t?'on-target':'off-target');
+    const row=document.createElement('div');row.className='shift-entry-row';
+    row.innerHTML=`<div class="shift-entry-info"><div class="shift-entry-name">${s.label}</div><div class="shift-entry-meta">${s.type.toUpperCase()} · target ${t}</div></div><input type="number" min="0" inputmode="numeric" placeholder="—" value="${v}" class="shift-entry-input ${cls}" id="ev-${s.id}" onchange="onBuiltInput('${s.id}',${i},this.value)" onfocus="this.select()"/>`;
+    c.appendChild(row);
+  });
+}
+function onBuiltInput(id,i,val){
+  const n=parseInt(val,10),el=document.getElementById('ev-'+id);
+  const t=state.shiftTargets[i]||0;
+  if(!isNaN(n)&&n>=0){state.built[id]=n;if(el){el.classList.remove('on-target','off-target');el.classList.add(n>=t?'on-target':'off-target');}}
+  else{delete state.built[id];if(el)el.classList.remove('on-target','off-target');}
+  pushToFirebase();refreshAll();
+}
+window.onBuiltInput=onBuiltInput;
+function buildDailyInputs(){
+  const ws=state.weekStart||getMondayStr();
+  const nextMon=new Date(ws+'T00:00:00');nextMon.setDate(nextMon.getDate()+7);
+  const tw=document.getElementById('this-week-label-entry'),nw=document.getElementById('next-week-label-entry');
+  if(tw)tw.textContent='This week · '+formatWeekLabel(ws);
+  if(nw)nw.textContent='Next week · '+formatWeekLabel(toLocalDateStr(nextMon));
+  const c=document.getElementById('daily-inputs');c.innerHTML='';
+  DAYS.forEach(d=>{const w=document.createElement('div');w.className='field';w.innerHTML=`<label>${DAY_LABELS[d]}</label><input type="number" min="0" placeholder="0" value="${(state.dailyParts||{})[d]||''}" oninput="onDailyChange('${d}',this.value)"/>`;c.appendChild(w);});
+  const cn=document.getElementById('daily-inputs-next');if(!cn)return;cn.innerHTML='';
+  DAYS.forEach(d=>{const w=document.createElement('div');w.className='field';w.innerHTML=`<label>${DAY_LABELS[d]}</label><input type="number" min="0" placeholder="0" value="${(state.dailyPartsNext||{})[d]||''}" oninput="onNextDailyChange('${d}',this.value)"/>`;cn.appendChild(w);});
+}
+function onDailyChange(d,v){if(!state.dailyParts)state.dailyParts={mon:0,tue:0,wed:0,thu:0,fri:0};state.dailyParts[d]=parseInt(v,10)||0;pushToFirebase();refreshAll();}
+function onNextDailyChange(d,v){if(!state.dailyPartsNext)state.dailyPartsNext={mon:0,tue:0,wed:0,thu:0,fri:0};state.dailyPartsNext[d]=parseInt(v,10)||0;pushToFirebase();buildNextWeekPanel();}
+window.onDailyChange=onDailyChange;window.onNextDailyChange=onNextDailyChange;
+function buildNextWeekPanel(){
+  const panel=document.getElementById('next-week-panel');
+  const hasNext=DAYS.some(d=>(nextWeekByDay[d]||[]).length>0||(state.dailyPartsNext||{})[d]>0);
+  if(!hasNext){panel.style.display='none';return;}
+  panel.style.display='block';
+  const ws=state.weekStart||getMondayStr();
+  const nextMon=new Date(ws+'T00:00:00');nextMon.setDate(nextMon.getDate()+7);
+  document.getElementById('nw-week-label').textContent=formatWeekLabel(toLocalDateStr(nextMon));
+  const c=document.getElementById('nw-days');c.innerHTML='';
+  let total=0;
+  DAYS.forEach(d=>{
+    const loads=nextWeekByDay[d]||[],st=loads.reduce((a,l)=>a+l.qty,0),mt=(state.dailyPartsNext||{})[d]||0;
+    const dt=st||mt;if(!dt)return;total+=dt;
+    const row=document.createElement('div');row.className='nw-day';
+    const li=loads.length>0?` <span style="font-size:10px;color:var(--muted);">(${loads.length} load${loads.length!==1?'s':''})</span>`:'';
+    row.innerHTML=`<span class="nw-day-label">${DAY_FULL[d]}</span><span class="nw-day-val">${dt}${li}</span>`;
+    c.appendChild(row);
+  });
+  document.getElementById('nw-total').textContent=total;
+}
+function buildFcSelect(){
+  const sel=document.getElementById('fc-shift');sel.innerHTML='<option value="">— select shift —</option>';
+  SHIFTS.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.label;if(String(i)===String(state.forecast.shiftIdx))o.selected=true;sel.appendChild(o);});
+}
+function getDayFromLoad(loadNo){
+  if(!loadNo)return'';
+  const clean=loadNo.replace('#','').trim().toUpperCase();
+  for(const d of ORDERED_DAYS){
+    const loads=thisWeekByDay[d]||[];
+    if(loads.some(l=>l.loadNo.replace('#','').trim().toUpperCase()===clean))return d;
+  }
+  return'';
+}
+function getMadeSoFarFromLoad(loadNo,madeInLoad){
+  if(!loadNo)return parseInt(madeInLoad,10)||0;
+  const clean=loadNo.replace('#','').trim().toUpperCase();
+  const day=getDayFromLoad(loadNo);
+  if(!day)return parseInt(madeInLoad,10)||0;
+  const loads=thisWeekByDay[day]||[];
+  let cumulative=0;
+  for(const l of loads){
+    if(l.loadNo.replace('#','').trim().toUpperCase()===clean){cumulative+=parseInt(madeInLoad,10)||0;break;}
+    cumulative+=l.qty||0;
+  }
+  return cumulative;
+}
+function onFcChange(){
+  state.forecast.shiftIdx=document.getElementById('fc-shift').value;
+  state.forecast.currentLoad=(document.getElementById('fc-load').value||'').trim();
+  state.forecast.madeInLoad=document.getElementById('fc-made').value;
+  state.forecast.currentDay=getDayFromLoad(state.forecast.currentLoad);
+  state.forecast.madeSoFar=String(getMadeSoFarFromLoad(state.forecast.currentLoad,state.forecast.madeInLoad));
+  pushToFirebase();refreshForecast();buildChart();
+}
+function clearForecast(){
+  state.forecast={shiftIdx:'',currentDay:'',currentLoad:'',madeInLoad:'',madeSoFar:''};
+  document.getElementById('fc-shift').value='';
+  document.getElementById('fc-load').value='';
+  document.getElementById('fc-made').value='';
+  pushToFirebase();refreshForecast();buildChart();
+}
+function loadFcInputs(){
+  const l=document.getElementById('fc-load');if(l)l.value=state.forecast.currentLoad||'';
+  const m=document.getElementById('fc-made');if(m)m.value=state.forecast.madeInLoad||'';
+}
+window.onFcChange=onFcChange;window.clearForecast=clearForecast;
+function refreshForecast(){
+  const fc=getForecastLine(),idx=parseInt(state.forecast.shiftIdx),eow=fc?fc[SHIFTS.length-1]:null;
+  const eowEl=document.getElementById('fc-eow'),badge=document.getElementById('fc-badge'),stFc=document.getElementById('st-fc');
+  const bc=document.getElementById('fc-breakdown-card'),bd=document.getElementById('fc-breakdown'),ds=document.getElementById('dash-fc-summary');
+  document.getElementById('fc-wtarget').textContent=state.weeklyTarget;
+  if(eow===null||isNaN(idx)){
+    eowEl.textContent='—';badge.className='fc-badge none';stFc.textContent='—';stFc.className='stat-val';bc.style.display='none';
+    if(ds)ds.innerHTML='<div style="font-size:12px;color:var(--muted);">Set current position on the Forecast tab.</div>';
+  }else{
+    eowEl.textContent=eow;stFc.textContent=eow;
+    const diff=eow-state.weeklyTarget;
+    if(diff>=0){badge.textContent=`On track · +${diff} vs weekly target`;badge.className='fc-badge good';stFc.className='stat-val good';}
+    else if(diff>=-10){badge.textContent=`Close · ${Math.abs(diff)} short`;badge.className='fc-badge warn';stFc.className='stat-val warn';}
+    else{badge.textContent=`${Math.abs(diff)} short of weekly target`;badge.className='fc-badge bad';stFc.className='stat-val bad';}
+    bc.style.display='block';bd.innerHTML=buildForecastHTML(true);
+    if(ds)ds.innerHTML=buildForecastHTML(false);
+    const buckets=getForecastBuckets();
+    if(buckets&&buckets.shiftResults&&buckets.shiftResults.length>0){
+      const cs=buckets.shiftResults[0];
+      const ls=cs.segments[cs.segments.length-1];
+      if(ls&&!ls.beyond){state.forecast.endDay=ls.day||'';state.forecast.endLoadIdx=ls.loadIdx!==undefined?ls.loadIdx:0;state.forecast.endLoadCount=ls.loadCount||0;state.forecast.endLoadNo=ls.loadNo||'';pushToFirebase();}
+    }
+  }
+}
+function buildShiftTargetInputs(){
+  const c=document.getElementById('shift-target-inputs');c.innerHTML='';
+  SHIFTS.forEach((s,i)=>{const w=document.createElement('div');w.className='field';w.innerHTML=`<label>${s.label}</label><input type="number" min="0" value="${state.shiftTargets[i]||0}" oninput="onTargetChange(${i},this.value)"/>`;c.appendChild(w);});
+}
+function onTargetChange(i,val){const n=parseInt(val,10);if(!isNaN(n)&&n>=0)state.shiftTargets[i]=n;pushToFirebase();refreshAll();}
+function onSettingChange(){state.weeklyTarget=parseInt(document.getElementById('set-weekly').value,10)||0;pushToFirebase();refreshAll();}
+function onWeekChange(){
+  const v=document.getElementById('weekStartInput').value||document.getElementById('set-week-start').value;
+  if(v){state.weekStart=v;document.getElementById('weekStartInput').value=v;document.getElementById('set-week-start').value=v;document.getElementById('hdr-week').textContent=formatWeekLabel(v);}
+  pushToFirebase();
+  if(sheetLoads.length>0){processSheetData(sheetLoads);buildDailyInputs();buildNextWeekPanel();refreshAll();}
+}
+function confirmReset(){
+  if(confirm('Reset all built data for this week?\nSettings kept. Affects ALL viewers.')){state.built={};pushToFirebase();fullRebuild();toast('Built data cleared');}
+}
+window.onTargetChange=onTargetChange;window.onSettingChange=onSettingChange;window.onWeekChange=onWeekChange;window.confirmReset=confirmReset;
+function refreshStats(){
+  const tb=Object.values(state.built).reduce((a,b)=>a+b,0);
+  const comp=SHIFTS.filter(s=>state.built[s.id]!==undefined);
+  const exp=comp.reduce((a,s)=>a+(state.shiftTargets[SHIFTS.indexOf(s)]||0),0);
+  const v=tb-exp;
+  document.getElementById('st-built').textContent=tb;
+  document.getElementById('st-exp').textContent=exp;
+  const vEl=document.getElementById('st-var');vEl.textContent=(v>=0?'+':'')+v;vEl.className='stat-val '+(v>=0?'good':'bad');
+}
+let tt;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2500);}
+function showTab(n){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');document.querySelectorAll('.tab').forEach(t=>{if(t.getAttribute('onclick').includes("'"+n+"'"))t.classList.add('active');});}
+window.showTab=showTab;
+function refreshAll(){refreshStats();refreshForecast();buildChart();buildDashRows();}
+function fullRebuild(){
+  const ws=state.weekStart||getMondayStr();
+  document.getElementById('weekStartInput').value=ws;
+  document.getElementById('set-week-start').value=ws;
+  document.getElementById('set-weekly').value=state.weeklyTarget;
+  document.getElementById('hdr-week').textContent=formatWeekLabel(ws);
+  buildFcSelect();loadFcInputs();buildEntryRows();buildDailyInputs();buildShiftTargetInputs();buildNextWeekPanel();refreshAll();
+}
+setTimeout(fetchSheet,1500);
+</script>
+</body>
+</html>
