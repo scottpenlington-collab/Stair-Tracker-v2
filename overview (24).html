@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Staircraft Overview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E0F11;--surface:#16181C;--surface2:#1E2127;--border:#2A2D35;--text:#E8EAF0;--muted:#6B7180;--day:#22C55E;--target:#EF4444;--warn:#F59E0B;--accent:#F59E0B;--stairs:#3B82F6;--bullnose:#A78BFA;--treads:#34D399;--radius:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;}
+#app{max-width:480px;margin:0 auto;padding:0 0 80px;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;}
+.header-info{flex:1;}
+.header-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+.header-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.back-btn{background:none;border:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;}
+.section{padding:12px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;}
+.stat-val.good{color:var(--day);}
+.stat-val.bad{color:var(--target);}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 8px 8px;margin-bottom:12px;}
+.chart-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px;}
+canvas{width:100%!important;height:200px!important;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:12px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);}
+.leg-bar{width:9px;height:9px;border-radius:2px;}
+.dept-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:10px;}
+.dept-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.dept-dot{width:8px;height:8px;border-radius:50%;}
+.dept-row{display:grid;grid-template-columns:1fr 55px 55px 55px;gap:4px;padding:7px 0;border-top:1px solid var(--border);align-items:center;font-size:12px;}
+.dept-row-head{display:grid;grid-template-columns:1fr 55px 55px 55px;gap:4px;padding:0 0 5px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;}
+.shift-name{font-weight:500;}
+.num{font-family:'DM Mono',monospace;text-align:right;}
+.num.good{color:var(--day);}
+.num.bad{color:var(--target);}
+.num.muted{color:var(--muted);}
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:3px;}
+.prog-fill{height:100%;border-radius:2px;}
+.danger-card{background:var(--surface);border:2px solid var(--target);border-radius:var(--radius);padding:13px;margin-bottom:12px;}
+.danger-card.safe{border-color:var(--day);}
+.danger-card.warn{border-color:var(--warn);}
+.danger-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.danger-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.danger-title.red{color:var(--target);}
+.danger-title.amber{color:var(--warn);}
+.danger-title.green{color:var(--day);}
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--border);}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.alert-dot.red{background:var(--target);}
+.alert-dot.amber{background:var(--warn);}
+.alert-dot.green{background:var(--day);}
+.alert-text{font-size:12px;line-height:1.5;}
+.alert-dept{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.sync-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;max-width:480px;margin:0 auto;z-index:50;}
+.sync-status{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--day);display:inline-block;}
+.sync-dot.connecting{background:var(--warn);animation:pulse 1s infinite;}
+.sync-btn{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes pulseRed{0%,100%{border-color:var(--target);}50%{border-color:#ff6b6b;box-shadow:0 0 12px rgba(239,68,68,.3);}}
+.pulse-red{animation:pulseRed 2s ease-in-out infinite;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" style="flex-shrink:0;">
+      <rect x="1" y="28" width="8" height="8" rx="1.5" fill="#3B82F6"/>
+      <rect x="11" y="21" width="8" height="15" rx="1.5" fill="#A78BFA"/>
+      <rect x="21" y="14" width="8" height="22" rx="1.5" fill="#34D399"/>
+      <rect x="31" y="6" width="6" height="30" rx="1.5" fill="#F59E0B"/>
+    </svg>
+    <div class="header-info">
+      <div class="header-title">Production Overview</div>
+      <div class="header-sub" id="hdr-sub">Connecting…</div>
+    </div>
+    <button class="back-btn" onclick="window.history.back()">&#8592; Back</button>
+  </div>
+
+  <div class="section">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Total built</div><div class="stat-val" id="st-built">—</div></div>
+      <div class="stat"><div class="stat-label">Target to date</div><div class="stat-val" id="st-target">—</div></div>
+      <div class="stat"><div class="stat-label">Variance</div><div class="stat-val" id="st-var">—</div></div>
+      <div class="stat"><div class="stat-label">Departments live</div><div class="stat-val" id="st-depts">—</div></div>
+    </div>
+
+    <div id="danger-panel" class="danger-card" style="display:none;">
+      <div class="danger-header">
+        <span style="font-size:18px;">⚠️</span>
+        <div>
+          <div class="danger-title red" id="danger-title">Danger Zone</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="danger-sub">Action required</div>
+        </div>
+      </div>
+      <div id="danger-alerts"></div>
+    </div>
+    <div id="safe-panel" class="danger-card safe" style="display:none;">
+      <div class="danger-header">
+        <span style="font-size:18px;">✅</span>
+        <div>
+          <div class="danger-title green">All Clear</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;">All departments within safe limits</div>
+        </div>
+      </div>
+      <div id="safe-positions"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Built vs target — all departments</div>
+      <canvas id="mainChart"></canvas>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="leg-bar" style="background:var(--stairs)"></span>1st Fix</div>
+      <div class="legend-item"><span class="leg-bar" style="background:var(--bullnose)"></span>Bullnose</div>
+      <div class="legend-item"><span class="leg-bar" style="background:var(--treads)"></span>Treads</div>
+      <div class="legend-item"><span class="leg-bar" style="background:var(--target)"></span>Target</div>
+    </div>
+
+    <div class="dept-card">
+      <div class="dept-title"><span class="dept-dot" style="background:var(--stairs)"></span>1st Fix Assembly</div>
+      <div class="dept-row-head"><span>Shift</span><span style="text-align:right">Target</span><span style="text-align:right">Built</span><span style="text-align:right">Var</span></div>
+      <div id="rows-stairs"></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--muted);">Week total</span><span class="num" id="tot-stairs">—</span>
+      </div>
+    </div>
+    <div class="dept-card">
+      <div class="dept-title"><span class="dept-dot" style="background:var(--bullnose)"></span>Bullnose Assembly</div>
+      <div class="dept-row-head"><span>Shift</span><span style="text-align:right">Target</span><span style="text-align:right">Built</span><span style="text-align:right">Var</span></div>
+      <div id="rows-bullnose"></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--muted);">Week total</span><span class="num" id="tot-bullnose">—</span>
+      </div>
+    </div>
+    <div class="dept-card">
+      <div class="dept-title"><span class="dept-dot" style="background:var(--treads)"></span>Treads + Riser</div>
+      <div class="dept-row-head"><span>Shift</span><span style="text-align:right">Target</span><span style="text-align:right">Built</span><span style="text-align:right">Var</span></div>
+      <div id="rows-treads"></div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--muted);">Week total</span><span class="num" id="tot-treads">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-status"><span class="sync-dot connecting" id="sync-dot"></span><span id="sync-label">Connecting…</span></div>
+  <button class="sync-btn" onclick="forceSync()">&#8635; Sync</button>
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getDatabase,ref,onValue}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const FC={apiKey:"AIzaSyCLbgeJuQ6xvWKOcXZw_DLYEwLxd7dBkck",authDomain:"stair-assembly-forecast.firebaseapp.com",databaseURL:"https://stair-assembly-forecast-default-rtdb.europe-west1.firebasedatabase.app",projectId:"stair-assembly-forecast",storageBucket:"stair-assembly-forecast.firebasestorage.app",messagingSenderId:"87352661446",appId:"1:87352661446:web:47301077abf27b509b0ec7"};
+const db=getDatabase(initializeApp(FC));
+
+const SHEET_URL='https://script.google.com/macros/s/AKfycbyV64i3kGyYWSmIagZtFP8GggNDMlwX8mjq7SwtwnSUyXpgqzDubwXayBeXIn7Ovmg/exec';
+const SHIFTS=[{id:'s0',label:'Sun night'},{id:'s1',label:'Mon day'},{id:'s2',label:'Mon night'},{id:'s3',label:'Tue day'},{id:'s4',label:'Tue night'},{id:'s5',label:'Wed day'},{id:'s6',label:'Wed night'},{id:'s7',label:'Thu day'},{id:'s8',label:'Fri day'}];
+const DAYS=['mon','tue','wed','thu','fri'];
+const DAYS_ORDER=['mon','tue','wed','thu','fri'];
+const DEFAULT_TARGETS=[10,12,10,12,10,12,10,12,8];
+
+const depts={
+  stairs:{path:'tracker/v1',label:'1st Fix',color:'#3B82F6',data:null,ready:false},
+  bullnose:{path:'bullnose/v1',label:'Bullnose',color:'#A78BFA',data:null,ready:false},
+  treads:{path:'treads/v1',label:'Treads',color:'#34D399',data:null,ready:false},
+};
+let sheetByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+let chart;
+
+function setSyncStatus(live){
+  const dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
+  dot.className='sync-dot'+(live?'':' connecting');
+  lbl.textContent=live?'Live · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'Connecting…';
+  document.getElementById('hdr-sub').textContent=live?'All departments combined':'Connecting to Firebase…';
+}
+
+function getTargets(data){
+  const t=(data&&data.shiftTargets)||[];
+  return SHIFTS.map((_,i)=>t[i]||DEFAULT_TARGETS[i]||0);
+}
+
+function buildDeptRows(key,color){
+  const d=depts[key];
+  const targets=getTargets(d.data);
+  const built=(d.data&&d.data.built)||{};
+  const c=document.getElementById('rows-'+key);c.innerHTML='';
+  let tb=0,tt=0;
+  SHIFTS.forEach((s,i)=>{
+    const b=built[s.id]!==undefined?built[s.id]:null;
+    const t=targets[i];
+    const v=b!==null?b-t:null;
+    if(b!==null){tb+=b;tt+=t;}
+    const pct=t>0&&b!==null?Math.min(100,Math.round(b/t*100)):0;
+    const row=document.createElement('div');row.className='dept-row';
+    row.innerHTML=`<div><div class="shift-name">${s.label}</div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div></div><span class="num muted">${t}</span><span class="num">${b!==null?b:'—'}</span><span class="num ${v===null?'muted':v>=0?'good':'bad'}">${v===null?'—':(v>=0?'+':'')+v}</span>`;
+    c.appendChild(row);
+  });
+  const el=document.getElementById('tot-'+key);
+  if(tb>0){const tv=tb-tt;el.textContent=(tv>=0?'+':'')+tv+' vs target ('+tb+' built)';el.className='num '+(tv>=0?'good':'bad');}
+  else{el.textContent='No data yet';el.className='num muted';}
+  return{built:tb,target:tt};
+}
+
+function buildChart(){
+  const ctx=document.getElementById('mainChart');
+  if(chart)chart.destroy();
+  const labels=SHIFTS.map(s=>s.label.replace(' ','\n'));
+  const sd=SHIFTS.map((s,i)=>{const b=depts.stairs.data?.built?.[s.id];return b!==undefined?b:null;});
+  const bd=SHIFTS.map((s,i)=>{const b=depts.bullnose.data?.built?.[s.id];return b!==undefined?b:null;});
+  const td=SHIFTS.map((s,i)=>{const b=depts.treads.data?.built?.[s.id];return b!==undefined?b:null;});
+  const st=getTargets(depts.stairs.data),bt=getTargets(depts.bullnose.data),tt=getTargets(depts.treads.data);
+  const combinedTarget=SHIFTS.map((_,i)=>st[i]+bt[i]+tt[i]);
+  chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'1st Fix',data:sd,backgroundColor:'#3B82F6',borderRadius:2,stack:'built',order:2},
+    {label:'Bullnose',data:bd,backgroundColor:'#A78BFA',borderRadius:2,stack:'built',order:2},
+    {label:'Treads',data:td,backgroundColor:'#34D399',borderRadius:2,stack:'built',order:2},
+    {label:'Target',data:combinedTarget,type:'line',borderColor:'#EF4444',backgroundColor:'transparent',borderWidth:1.5,pointRadius:2,order:1,tension:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#1E2127',borderColor:'#2A2D35',borderWidth:1}},
+    scales:{x:{stacked:true,ticks:{color:'#6B7180',font:{size:8},maxRotation:30},grid:{color:'#2A2D35'}},y:{stacked:true,ticks:{color:'#6B7180',font:{size:9}},grid:{color:'#2A2D35'},beginAtZero:true}}}});
+}
+
+function getCurrentLoadIndex(data,dayField){
+  if(!data?.forecast||data.forecast.shiftIdx==='')return null;
+  const fc=data.forecast;
+
+  // Use saved end position from Firebase if available (set by tracker's refreshForecast)
+  if(fc.endDay!==undefined&&fc.endDay!==''&&fc.endLoadIdx!==undefined&&fc.endLoadCount){
+    const cleanDay=fc.endDay.replace('nw_','');
+    const loads=sheetByDay[cleanDay]||[];
+    const loadNo=fc.endLoadNo||loads[fc.endLoadIdx]?.loadNo||'';
+    return{day:fc.endDay,loadIdx:parseInt(fc.endLoadIdx)||0,loadCount:parseInt(fc.endLoadCount)||1,loadNo};
+  }
+
+  // Fallback: calculate from madeSoFar + shift target using sheet loads
+  const day=fc.currentDay||'';
+  const made=parseInt(fc.madeSoFar,10)||0;
+  const shiftIdx=parseInt(fc.shiftIdx,10);
+  if(!day||isNaN(shiftIdx))return null;
+
+  // Build ordered load list across the week using qty column
+  const allLoads=[];
+  ['mon','tue','wed','thu','fri'].forEach(d=>{
+    (sheetByDay[d]||[]).forEach((l,i)=>allLoads.push({...l,qty:l.qty||0,day:d,loadIdx:i,loadCount:(sheetByDay[d]||[]).length}));
+  });
+  if(!allLoads.length)return null;
+
+  // Find start position
+  let startBucket=0,rem=0,dayConsumed=0,found=false;
+  for(let b=0;b<allLoads.length;b++){
+    if(allLoads[b].day===day){
+      if(dayConsumed+allLoads[b].qty>made){startBucket=b;rem=allLoads[b].qty-(made-dayConsumed);found=true;break;}
+      dayConsumed+=allLoads[b].qty;
+    }else if(found)break;
+  }
+  if(!found){
+    let pastDay=false;
+    for(let b=0;b<allLoads.length;b++){
+      if(allLoads[b].day===day)pastDay=true;
+      else if(pastDay){startBucket=b;rem=allLoads[b].qty||0;break;}
+    }
+  }
+
+  // Walk shift target forward
+  const targets=data.shiftTargets||[10,12,10,12,10,12,10,12,8];
+  const built=data.built||{};
+  const SIDS=['s0','s1','s2','s3','s4','s5','s6','s7','s8'];
+  const contribution=built[SIDS[shiftIdx]]!==undefined?built[SIDS[shiftIdx]]:(targets[shiftIdx]||0);
+  let todo=contribution,bIdx=startBucket,r=rem,endBucket=startBucket;
+  while(todo>0){
+    if(bIdx>=allLoads.length)break;
+    if(r<=0){bIdx++;if(bIdx>=allLoads.length)break;r=allLoads[bIdx].qty||0;}
+    const take=Math.min(todo,r);r-=take;todo-=take;endBucket=bIdx;
+  }
+  const el=allLoads[endBucket]||allLoads[allLoads.length-1];
+  return{day:el.day,loadIdx:el.loadIdx,loadCount:el.loadCount,loadNo:el.loadNo||''};
+}
+
+function buildDangerZone(){
+  const panel=document.getElementById('danger-panel'),safe=document.getElementById('safe-panel');
+  const alertsEl=document.getElementById('danger-alerts'),titleEl=document.getElementById('danger-title'),subEl=document.getElementById('danger-sub');
+  const sp=getCurrentLoadIndex(depts.stairs.data,'dailyStairs');
+  if(!sp){panel.style.display='none';safe.style.display='none';return;}
+  const alerts=[];
+  const sDayIdx=DAYS_ORDER.indexOf(sp.day.replace('nw_',''));
+  const sLoads=sheetByDay[sp.day.replace('nw_','')]||[];
+  const stairsEndDay=sp.day.replace('nw_','');
+
+  // Rule 1: Stairs danger — only flag if MORE than 2 loads remain after the NEXT shift
+  // (nightshift between day shifts will clear loads before next day shift starts)
+  // We use the saved end position which already accounts for the current shift
+  // Check how many loads of the same day are left after the next shift runs
+  if(sLoads.length>0){
+    const loadsLeftInDay=sp.loadCount-sp.loadIdx-1; // loads AFTER current load
+    // Allow 2 loads buffer — nightshift will clear these before next dayshift
+    if(loadsLeftInDay>3){
+      alerts.push({level:'red',dept:'1st Fix Assembly',
+        msg:`${loadsLeftInDay} loads remaining on ${stairsEndDay} after this shift — nightshift may not clear before next day delivery`});
+    }else if(loadsLeftInDay===3){
+      alerts.push({level:'amber',dept:'1st Fix Assembly',
+        msg:`${loadsLeftInDay} loads remaining on ${stairsEndDay} — nightshift will need to clear these`});
+    }
+  }
+  // Rules 2 & 3: Bullnose and Treads must have completed stairs' current delivery day
+  [{key:'bullnose',label:'Bullnose Assembly',dayField:'dailyStairs'},{key:'treads',label:'Treads + Riser',dayField:'dailyStairs'}].forEach(({key,label,dayField})=>{
+    const pos=getCurrentLoadIndex(depts[key].data,dayField);
+    const hasForecast=depts[key].data?.forecast?.shiftIdx!==undefined&&depts[key].data?.forecast?.shiftIdx!=='';
+    if(!pos){
+      if(!hasForecast)alerts.push({level:'amber',dept:label,msg:'No forecast position set'});
+      return;
+    }
+    const deptEndDay=pos.day.replace('nw_','');
+    const deptDayIdx=DAYS_ORDER.indexOf(deptEndDay);
+    const stairsDayIdx=DAYS_ORDER.indexOf(stairsEndDay);
+
+    // Calculate load gap using global position across all days
+    const allLoads=[];
+    ['mon','tue','wed','thu','fri'].forEach(d=>{(sheetByDay[d]||[]).forEach((l,i)=>allLoads.push({day:d,loadIdx:i}));});
+    const stairsGlobal=allLoads.findIndex(l=>l.day===stairsEndDay&&l.loadIdx===sp.loadIdx);
+    const deptGlobal=allLoads.findIndex(l=>l.day===deptEndDay&&l.loadIdx===pos.loadIdx);
+    const loadGap=deptGlobal>=0&&stairsGlobal>=0?deptGlobal-stairsGlobal:deptDayIdx-stairsDayIdx;
+
+    if(deptDayIdx<stairsDayIdx){
+      alerts.push({level:'red',dept:label,
+        msg:`CRITICAL — ending on ${deptEndDay} while stairs end on ${stairsEndDay}`});
+    }else if(loadGap<3){
+      alerts.push({level:loadGap<=0?'red':'amber',dept:label,
+        msg:`${Math.max(0,loadGap)} load${loadGap!==1?'s':''} ahead of stairs — needs minimum 3 loads ahead`});
+    }else{
+      alerts.push({level:'green',dept:label,
+        msg:`${loadGap} load${loadGap!==1?'s':''} ahead of stairs ✓`});
+    }
+  });
+  const DAY_FULL={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday'};
+  function fmtDay(d){const c=d.replace('nw_','');return(d.startsWith('nw_')?'Next ':'')+(DAY_FULL[c]||c);}
+  const hasRed=alerts.some(a=>a.level==='red'),hasAmber=alerts.some(a=>a.level==='amber'),allGreen=alerts.length>0&&alerts.every(a=>a.level==='green');
+
+  // Always build dept position rows
+  const posRows=[
+    {label:'1st Fix Assembly',color:'#3B82F6',pos:sp,data:depts.stairs.data},
+    {label:'Bullnose Assembly',color:'#A78BFA',pos:getCurrentLoadIndex(depts.bullnose.data,'dailyStairs'),data:depts.bullnose.data},
+    {label:'Treads + Riser',color:'#34D399',pos:getCurrentLoadIndex(depts.treads.data,'dailyStairs'),data:depts.treads.data},
+  ];
+  const posHTML=posRows.map(({label,color,pos,data})=>{
+    const hasForecast=data?.forecast?.shiftIdx!==undefined&&data?.forecast?.shiftIdx!=='';
+    if(!pos){
+      const msg=hasForecast?'Calculating…':'No position set';
+      return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--border);"><span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block;"></span><div><div style="font-size:12px;font-weight:500;color:var(--text);">${label}</div><div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;">${msg}</div></div></div>`;
+    }
+    const loadNo=pos.loadNo?` · ${pos.loadNo}`:'';
+    return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--border);">
+      <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block;"></span>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:500;color:var(--text);">${label}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--day);margin-top:2px;">Ends · ${fmtDay(pos.day)} · Load ${pos.loadIdx+1}/${pos.loadCount}${loadNo}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if(allGreen||!alerts.length){
+    panel.style.display='none';
+    safe.style.display='block';
+    const posEl=document.getElementById('safe-positions');
+    if(posEl)posEl.innerHTML=posHTML;
+  }else{
+    safe.style.display='none';panel.style.display='block';
+    panel.className='danger-card'+(hasRed?' pulse-red':hasAmber?' warn':'');
+    titleEl.textContent=hasRed?'Danger Zone':hasAmber?'Caution':'Status';
+    titleEl.className='danger-title '+(hasRed?'red':hasAmber?'amber':'green');
+    subEl.textContent=hasRed?'Immediate action required':hasAmber?'Monitor closely':'';
+    alertsEl.innerHTML=alerts.map(a=>`<div class="alert-row"><span class="alert-dot ${a.level}"></span><div><div class="alert-text">${a.msg}</div><div class="alert-dept">${a.dept}</div></div></div>`).join('')+
+      `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:4px;">${posHTML}</div>`;
+  }
+}
+
+function rebuild(){
+  let tb=0,tt=0,live=0;
+  Object.keys(depts).forEach(k=>{const r=buildDeptRows(k,depts[k].color);tb+=r.built;tt+=r.target;if(r.built>0)live++;});
+  document.getElementById('st-built').textContent=tb||'—';
+  document.getElementById('st-target').textContent=tt||'—';
+  document.getElementById('st-depts').textContent=live+'/3';
+  const v=tb-tt,el=document.getElementById('st-var');
+  el.textContent=tb>0?(v>=0?'+':'')+v:'—';
+  el.className='stat-val '+(tb>0?(v>=0?'good':'bad'):'');
+  buildDangerZone();
+  buildChart();
+}
+
+function checkAllReady(){
+  if(Object.values(depts).every(d=>d.ready)){
+    const ld=document.getElementById('loading');
+    if(ld)ld.classList.add('hidden');
+    const app=document.getElementById('app');
+    if(app)app.style.display='block';
+    setSyncStatus(true);
+    rebuild();
+  }
+}
+
+Object.entries(depts).forEach(([key,dept])=>{
+  onValue(ref(db,dept.path),snap=>{
+    if(snap.exists())dept.data=snap.val();
+    dept.ready=true;
+    checkAllReady();
+    rebuild();
+  },()=>{dept.ready=true;checkAllReady();});
+});
+
+// Force show after 5 seconds
+setTimeout(()=>{
+  Object.values(depts).forEach(d=>d.ready=true);
+  checkAllReady();
+},5000);
+
+async function fetchSheet(){
+  try{
+    const res=await fetch(SHEET_URL,{signal:AbortSignal.timeout(10000)});
+    const json=await res.json();
+    if(!Array.isArray(json))return;
+    const t=new Date(),dw=t.getDay(),mon=new Date(t);mon.setDate(t.getDate()-(dw===0?6:dw-1));
+    const ws=mon.getFullYear()+'-'+String(mon.getMonth()+1).padStart(2,'0')+'-'+String(mon.getDate()).padStart(2,'0');
+    const monDate=new Date(ws+'T00:00:00');
+    const dates={};DAYS.forEach((d,i)=>{const dt=new Date(monDate);dt.setDate(monDate.getDate()+i);dates[d]=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');});
+    sheetByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
+    json.forEach(row=>{
+      const str=String(row.date||'').trim();
+      let d2=str;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(str)){try{const p=new Date(str);if(!isNaN(p))d2=p.getFullYear()+'-'+String(p.getMonth()+1).padStart(2,'0')+'-'+String(p.getDate()).padStart(2,'0');}catch(e){}}
+      const day=Object.keys(dates).find(k=>dates[k]===d2);
+      if(day)sheetByDay[day].push({loadNo:String(row.loadNo||''),qty:parseInt(row.qty,10)||0,parts:parseInt(row.parts,10)||0});
+    });
+    rebuild();
+    // Retry after 2s in case sheet loaded before Firebase
+    setTimeout(rebuild,2000);
+  }catch(e){console.warn('Sheet fetch failed',e);}
+}
+
+function forceSync(){setSyncStatus(false);fetchSheet();}
+window.forceSync=forceSync;
+fetchSheet();
+</script>
+</body>
+</html>
