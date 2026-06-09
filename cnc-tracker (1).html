@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Treads & Risers"/>
+<meta name="apple-mobile-web-app-title" content="CNC Machining"/>
 <meta name="theme-color" content="#0E0F11"/>
-<title>Treads & Risers</title>
+<title>CNC Machining</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
@@ -166,7 +166,7 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
       <path d="M3.5 26.5 L13.5 18.5 L23.5 10.5 L33.5 2.5" stroke="#34D399" stroke-width="1.5" stroke-dasharray="3 2" stroke-linecap="round"/>
     </svg>
     <div class="header-info">
-      <div class="header-title">Treads & Risers Tracker</div>
+      <div class="header-title">CNC Tracker</div>
       <div class="header-week" id="hdr-week">Loading…</div>
     </div>
     <div class="week-nav">
@@ -345,8 +345,8 @@ const firebaseConfig={
 };
 const fbApp=initializeApp(firebaseConfig);
 const db=getDatabase(fbApp);
-const SETTINGS_REF=ref(db,'treads/v1');
-let DATA_REF=ref(db,'treads/weeks/'+getSundayStr());
+const SETTINGS_REF=ref(db,'cnc/v1');
+let DATA_REF=ref(db,'cnc/weeks/'+getSundayStr());
 let _weekListener=null;
 
 const SHEET_URL='https://script.google.com/macros/s/AKfycbyV64i3kGyYWSmIagZtFP8GggNDMlwX8mjq7SwtwnSUyXpgqzDubwXayBeXIn7Ovmg/exec';
@@ -423,7 +423,7 @@ window.forceSyncNow=forceSyncNow;
 function subscribeWeek(ws){
   // Detach previous listener
   if(_weekListener){try{off(DATA_REF,_weekListener);}catch(e){}}
-  DATA_REF=ref(db,'treads/weeks/'+ws);
+  DATA_REF=ref(db,'cnc/weeks/'+ws);
   _weekListener=onValue(DATA_REF,snap=>{
     isSaving=false; // always reset first
     if(snap.exists()){
@@ -1281,7 +1281,7 @@ function getNextWeekStr(){
 }
 
 function loadNextWeekData(cb){
-  const nwRef=ref(db,'treads/weeks/'+getNextWeekStr());
+  const nwRef=ref(db,'cnc/weeks/'+getNextWeekStr());
   get(nwRef).then(snap=>{
     if(snap.exists()){
       const d=snap.val();
@@ -1298,7 +1298,7 @@ function loadNextWeekData(cb){
 }
 
 function saveNextWeekData(){
-  const nwRef=ref(db,'treads/weeks/'+getNextWeekStr());
+  const nwRef=ref(db,'cnc/weeks/'+getNextWeekStr());
   get(nwRef).then(snap=>{
     const existing=snap.exists()?snap.val():{};
     set(nwRef,Object.assign({},existing,{
@@ -1621,7 +1621,7 @@ function _generatePDF(){
     :'<th>Shift</th><th>Type</th><th style="text-align:right">Target</th><th style="text-align:right">Built</th><th style="text-align:right">Var</th>';
 
   const body='<div class="hdr">'
-    +'<div><div style="font-size:20px;font-weight:800;text-transform:uppercase;">Treads & Risers</div>'
+    +'<div><div style="font-size:20px;font-weight:800;text-transform:uppercase;">CNC Machining</div>'
     +'<div style="font-size:10px;color:#666;margin-top:2px;">'+weekLabel+' · Printed '+dateStr+'</div></div>'
     +'<div style="text-align:right"><div style="font-size:9px;color:#666">Weekly target</div><div style="font-size:24px;font-weight:800;">'+weekTarget+'</div></div>'
     +'</div>'
@@ -1631,7 +1631,7 @@ function _generatePDF(){
     +'<table><thead><tr>'+thCols+'</tr></thead><tbody>'+tableRows+'</tbody></table>'
     +'<div class="sec">Forecast position — shift by shift</div>'
     +fcHtml
-    +'<div class="footer"><span>Staircraft Group — Treads & Risers</span><span>'+weekLabel+'</span></div>';
+    +'<div class="footer"><span>Staircraft Group — CNC Machining</span><span>'+weekLabel+'</span></div>';
 
   const scriptTag='<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},600);};<'+'/sc'+'ript>';
   const page='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>1st Fix — '+weekLabel+'</title>'

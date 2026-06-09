@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Treads & Risers"/>
+<meta name="apple-mobile-web-app-title" content="2nd Fix Assembly"/>
 <meta name="theme-color" content="#0E0F11"/>
-<title>Treads & Risers</title>
+<title>2nd Fix Assembly</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
@@ -115,8 +115,6 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
 .loading-text{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
 
 /* ── Homescreen ─────────────────────────────────────────────── */
-#homescreen{position:fixed;inset:0;z-index:300;background:#f2f2ee;overflow-y:auto;transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s;max-width:480px;margin:0 auto;}
-#homescreen.hidden{transform:translateY(-100%);opacity:0;pointer-events:none;}
 .hs-header{width:100%;overflow:hidden;}
 .hs-header img{width:100%;display:block;max-height:130px;object-fit:cover;object-position:center top;}
 .hs-greeting{padding:18px 16px 4px;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:.03em;text-transform:uppercase;}
@@ -166,7 +164,7 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
       <path d="M3.5 26.5 L13.5 18.5 L23.5 10.5 L33.5 2.5" stroke="#34D399" stroke-width="1.5" stroke-dasharray="3 2" stroke-linecap="round"/>
     </svg>
     <div class="header-info">
-      <div class="header-title">Treads & Risers Tracker</div>
+      <div class="header-title">2nd Fix Tracker</div>
       <div class="header-week" id="hdr-week">Loading…</div>
     </div>
     <div class="week-nav">
@@ -193,8 +191,8 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
       </button>
     </div>
     <div class="stats-grid">
-      <div class="stat"><div class="stat-label">Built</div><div class="stat-val" id="st-built">0</div></div>
-      <div class="stat"><div class="stat-label">Target to date</div><div class="stat-val" id="st-exp">0</div></div>
+      <div class="stat"><div class="stat-label">Metres</div><div class="stat-val" id="st-built">0</div></div>
+      <div class="stat"><div class="stat-label">Target (m)</div><div class="stat-val" id="st-exp">0</div></div>
       <div class="stat"><div class="stat-label">Variance</div><div class="stat-val" id="st-var">—</div></div>
       <div class="stat"><div class="stat-label">Forecast EoW</div><div class="stat-val" id="st-fc">—</div></div>
     </div>
@@ -207,7 +205,7 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
       <div class="legend-item"><span class="leg-line leg-dash" style="border-color:var(--forecast)"></span>Forecast</div>
     </div>
     <div class="shift-table">
-      <div class="shift-table-head"><span>Shift</span><span>Type</span><span>Target</span><span>Built</span></div>
+      <div class="shift-table-head"><span>Shift</span><span>Type</span><span>Target</span><span>Metres</span></div>
       <div id="dash-rows"></div>
     </div>
     <div class="card">
@@ -223,7 +221,7 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
       <div class="sheet-status"><span class="sheet-dot ok" id="nw-sheet-dot"></span><span id="nw-sheet-label">From Google Sheet</span></div>
       <div id="nw-days"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);">
-        <span style="font-size:12px;color:var(--muted);">Total next week</span>
+        <span style="font-size:12px;color:var(--muted);">Total next week (m)</span>
         <span style="font-family:'DM Mono',monospace;font-weight:500;font-size:14px;" id="nw-total">—</span>
       </div>
     </div>
@@ -233,17 +231,17 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
   <div class="section" id="tab-entry">
     <div class="card">
       <div class="card-title">Shift production</div>
-      <div class="card-sub">Enter stairs built per shift. Green = target met · Red flashing = below target.</div>
+      <div class="card-sub">Enter metres completed per shift. Green = target met · Red flashing = below target.</div>
     </div>
     <div class="shift-table" id="entry-rows"></div>
     <div style="height:10px;"></div>
     <div class="card">
-      <div class="card-title">Daily stairs per day</div>
+      <div class="card-title">Daily metres per day</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div class="sheet-status" style="margin-bottom:0;"><span class="sheet-dot" id="sheet-dot"></span><span id="sheet-label">Loading sheet…</span></div>
         <button class="btn btn-ghost btn-sm" onclick="fetchSheet()">↻ Refresh</button>
       </div>
-      <div class="card-sub" style="margin-bottom:8px;">Auto-filled from Google Sheet. Edit manually if needed.</div>
+      <div class="card-sub" style="margin-bottom:8px;">Enter metres per day manually.</div>
       <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;" id="this-week-label-entry">This week</p>
       <div class="grid-5" id="daily-inputs"></div>
       <p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px;" id="next-week-label-entry">Next week</p>
@@ -263,23 +261,23 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
     <div id="fc-this-week">
       <div class="card">
         <div class="card-title">Current position</div>
-        <div class="card-sub">Select your shift, enter the load number being built and how many are completed so far.</div>
+        <div class="card-sub">Select your shift and enter how many metres have been completed so far today.</div>
         <div class="grid-2" style="margin-bottom:10px;">
           <div class="field"><label>On shift</label><select id="fc-shift" onchange="onFcChange()"></select></div>
-          <div class="field"><label>Current load ID</label><input type="text" id="fc-load" placeholder="e.g. #113564" oninput="onFcChange()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:9px 11px;border-radius:8px;width:100%;"/></div>
-          <div class="field"><label>Made in this load</label><input type="number" min="0" id="fc-made" placeholder="e.g. 17" oninput="onFcChange()"/></div>
+          <div class="field"><label>Load / job ref (optional)</label><input type="text" id="fc-load" placeholder="e.g. JOB001" oninput="onFcChange()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:9px 11px;border-radius:8px;width:100%;"/></div>
+          <div class="field"><label>Metres done so far</label><input type="number" min="0" id="fc-made" placeholder="e.g. 45" oninput="onFcChange()"/></div>
           <div class="field" style="justify-content:flex-end;"><label>&nbsp;</label><button class="btn btn-ghost" onclick="clearForecast()" style="padding:9px;font-size:13px;">Clear</button></div>
         </div>
         <div id="fc-badge" class="fc-badge none"></div>
       </div>
       <div class="card" id="fc-breakdown-card" style="display:none;">
-        <div class="stat-label" style="margin-bottom:9px;">Shift-by-shift load forecast</div>
+        <div class="stat-label" style="margin-bottom:9px;">Shift-by-shift forecast</div>
         <div id="fc-breakdown"></div>
       </div>
       <div class="card">
-        <div class="stat-label" style="margin-bottom:5px;">Forecast end of week</div>
+        <div class="stat-label" style="margin-bottom:5px;">Forecast end of week (m)</div>
         <div class="stat-val" id="fc-eow" style="font-size:38px;">—</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:5px;">Weekly target: <span id="fc-wtarget" style="color:var(--text);font-family:'DM Mono',monospace;">—</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:5px;">Weekly target (m): <span id="fc-wtarget" style="color:var(--text);font-family:'DM Mono',monospace;">—</span></div>
       </div>
     </div>
 
@@ -295,7 +293,7 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
         </div>
       </div>
       <div class="card" id="nw-breakdown-card">
-        <div class="stat-label" style="margin-bottom:9px;">Next week shift-by-shift forecast</div>
+        <div class="stat-label" style="margin-bottom:9px;">Next week shift-by-shift forecast (m)</div>
         <div id="nw-breakdown"><div style="font-size:12px;color:var(--muted);">Enter next week daily figures on the Enter tab to see the forecast.</div></div>
       </div>
     </div>
@@ -312,13 +310,13 @@ input[type=number].shift-entry-input{width:64px!important;max-width:64px;min-wid
     </div>
     <div class="card">
       <div class="card-title">Shift targets</div>
-      <div class="card-sub">Expected stairs per shift.</div>
+      <div class="card-sub">Expected metres per shift.</div>
       <div class="settings-grid" id="shift-target-inputs"></div>
     </div>
     <div class="card">
       <div class="card-title">Reset data</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clears built data only. Settings kept. Affects all viewers.</div>
-      <button class="btn btn-danger" onclick="confirmReset()">Reset this week's built data</button>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clears entered data only. Settings kept. Affects all viewers.</div>
+      <button class="btn btn-danger" onclick="confirmReset()">Reset this week's data</button>
     </div>
   </div>
 
@@ -345,8 +343,8 @@ const firebaseConfig={
 };
 const fbApp=initializeApp(firebaseConfig);
 const db=getDatabase(fbApp);
-const SETTINGS_REF=ref(db,'treads/v1');
-let DATA_REF=ref(db,'treads/weeks/'+getSundayStr());
+const SETTINGS_REF=ref(db,'secondfix/v1');
+let DATA_REF=ref(db,'secondfix/weeks/'+getSundayStr());
 let _weekListener=null;
 
 const SHEET_URL='https://script.google.com/macros/s/AKfycbyV64i3kGyYWSmIagZtFP8GggNDMlwX8mjq7SwtwnSUyXpgqzDubwXayBeXIn7Ovmg/exec';
@@ -423,7 +421,7 @@ window.forceSyncNow=forceSyncNow;
 function subscribeWeek(ws){
   // Detach previous listener
   if(_weekListener){try{off(DATA_REF,_weekListener);}catch(e){}}
-  DATA_REF=ref(db,'treads/weeks/'+ws);
+  DATA_REF=ref(db,'secondfix/weeks/'+ws);
   _weekListener=onValue(DATA_REF,snap=>{
     isSaving=false; // always reset first
     if(snap.exists()){
@@ -797,7 +795,7 @@ function buildShiftSegmentHTML(segs){
           <span style="font-size:13px;color:var(--text);font-weight:500;">${seg.label}${ct}</span>
           ${loadLine?`<div style="margin-top:2px;">${loadLine}</div>`:''}
         </div>
-        <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--forecast);white-space:nowrap;margin-left:8px;">${seg.endInDay} / ${seg.ofTotal}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--forecast);white-space:nowrap;margin-left:8px;">${seg.endInDay}m / ${seg.ofTotal}m</span>
       </div>
       <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden;">
         <div style="background:var(--surface);height:100%;width:${spct}%;float:left;"></div>
@@ -830,7 +828,7 @@ function buildLoadRow(seg){
       <div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;">
         <span style="font-size:13px;font-weight:500;color:var(--text);">${seg.label}${done}</span>
       </div>
-      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--forecast);white-space:nowrap;margin-left:8px;">builds ${seg.amount} <span style="color:var(--muted);font-size:10px;">/ ${seg.ofTotal}</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--forecast);white-space:nowrap;margin-left:8px;">${seg.amount}m <span style="color:var(--muted);font-size:10px;">/ ${seg.ofTotal}m</span></span>
     </div>
     <div style="margin-bottom:6px;">${loadBadge}</div>
     <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden;">
@@ -838,8 +836,8 @@ function buildLoadRow(seg){
       <div style="background:var(--forecast);height:100%;width:${shiftPct}%;float:left;border-radius:0 2px 2px 0;"></div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:3px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">
-      <span>${seg.startInDay} done before</span>
-      <span>${seg.endInDay}/${seg.ofTotal} after shift</span>
+      <span>${seg.startInDay}m done before</span>
+      <span>${seg.endInDay}m/${seg.ofTotal}m after shift</span>
     </div>
   </div>`;
 }
@@ -949,7 +947,7 @@ function buildDashRows(){
     const t=isFuture?(nwState.shiftTargets[i]||0):state.shiftTargets[i];
     const row=document.createElement('div');
     row.className='shift-row'+(b!==undefined?' complete':'');
-    row.innerHTML=`<span class="shift-name">${s.label}</span><span class="shift-type ${s.type.toLowerCase()}">${s.type==='Night'?'NIGHT':'DAY'}</span><span class="shift-target">${t}</span><span class="shift-built-val">${b!==undefined?b:'—'}</span>`;
+    row.innerHTML=`<span class="shift-name">${s.label}</span><span class="shift-type ${s.type.toLowerCase()}">${s.type==='Night'?'NIGHT':'DAY'}</span><span class="shift-target">${t}</span><span class="shift-built-val">${b!==undefined?b+'m':'—'}</span>`;
     c.appendChild(row);
   });
 }
@@ -961,7 +959,7 @@ function buildEntryRows(){
   SHIFTS.forEach((s,i)=>{
     const v=state.built[s.id]!==undefined?state.built[s.id]:'';
     const row=document.createElement('div');row.className='shift-entry-row';
-    row.innerHTML=`<div class="shift-entry-info"><div class="shift-entry-name">${s.label}</div><div class="shift-entry-meta">${s.type.toUpperCase()} · target ${state.shiftTargets[i]}</div></div><input type="number" min="0" inputmode="numeric" placeholder="—" value="${v}" class="shift-entry-input ${getInputCls(s.id,i)}" id="ev-${s.id}" onchange="onBuiltInput('${s.id}',${i},this.value)" onfocus="this.select()"/>`;
+    row.innerHTML=`<div class="shift-entry-info"><div class="shift-entry-name">${s.label}</div><div class="shift-entry-meta">${s.type.toUpperCase()} · target ${state.shiftTargets[i]}m</div></div><input type="number" min="0" inputmode="numeric" placeholder="—" value="${v}" class="shift-entry-input ${getInputCls(s.id,i)}" id="ev-${s.id}" onchange="onBuiltInput('${s.id}',${i},this.value)" onfocus="this.select()"/>`;
     c.appendChild(row);
   });
 }
@@ -1281,7 +1279,7 @@ function getNextWeekStr(){
 }
 
 function loadNextWeekData(cb){
-  const nwRef=ref(db,'treads/weeks/'+getNextWeekStr());
+  const nwRef=ref(db,'secondfix/weeks/'+getNextWeekStr());
   get(nwRef).then(snap=>{
     if(snap.exists()){
       const d=snap.val();
@@ -1298,7 +1296,7 @@ function loadNextWeekData(cb){
 }
 
 function saveNextWeekData(){
-  const nwRef=ref(db,'treads/weeks/'+getNextWeekStr());
+  const nwRef=ref(db,'secondfix/weeks/'+getNextWeekStr());
   get(nwRef).then(snap=>{
     const existing=snap.exists()?snap.val():{};
     set(nwRef,Object.assign({},existing,{
@@ -1621,7 +1619,7 @@ function _generatePDF(){
     :'<th>Shift</th><th>Type</th><th style="text-align:right">Target</th><th style="text-align:right">Built</th><th style="text-align:right">Var</th>';
 
   const body='<div class="hdr">'
-    +'<div><div style="font-size:20px;font-weight:800;text-transform:uppercase;">Treads & Risers</div>'
+    +'<div><div style="font-size:20px;font-weight:800;text-transform:uppercase;">2nd Fix Assembly</div>'
     +'<div style="font-size:10px;color:#666;margin-top:2px;">'+weekLabel+' · Printed '+dateStr+'</div></div>'
     +'<div style="text-align:right"><div style="font-size:9px;color:#666">Weekly target</div><div style="font-size:24px;font-weight:800;">'+weekTarget+'</div></div>'
     +'</div>'
@@ -1631,7 +1629,7 @@ function _generatePDF(){
     +'<table><thead><tr>'+thCols+'</tr></thead><tbody>'+tableRows+'</tbody></table>'
     +'<div class="sec">Forecast position — shift by shift</div>'
     +fcHtml
-    +'<div class="footer"><span>Staircraft Group — Treads & Risers</span><span>'+weekLabel+'</span></div>';
+    +'<div class="footer"><span>Staircraft Group — 2nd Fix Assembly</span><span>'+weekLabel+'</span></div>';
 
   const scriptTag='<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},600);};<'+'/sc'+'ript>';
   const page='<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>1st Fix — '+weekLabel+'</title>'
