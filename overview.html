@@ -156,7 +156,7 @@ canvas{width:100%!important;height:200px!important;}
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getDatabase,ref,onValue}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import{getDatabase,ref,onValue,get}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 const FC={apiKey:"AIzaSyCLbgeJuQ6xvWKOcXZw_DLYEwLxd7dBkck",authDomain:"stair-assembly-forecast.firebaseapp.com",databaseURL:"https://stair-assembly-forecast-default-rtdb.europe-west1.firebasedatabase.app",projectId:"stair-assembly-forecast",storageBucket:"stair-assembly-forecast.firebasestorage.app",messagingSenderId:"87352661446",appId:"1:87352661446:web:47301077abf27b509b0ec7"};
 const db=getDatabase(initializeApp(FC));
@@ -167,10 +167,25 @@ const DAYS=['mon','tue','wed','thu','fri'];
 const DAYS_ORDER=['mon','tue','wed','thu','fri'];
 const DEFAULT_TARGETS=[10,12,10,12,10,12,10,12,8];
 
+function getMondayStr(){
+  const t=new Date(),d=t.getDay();
+  const mon=new Date(t);mon.setDate(t.getDate()-(d===0?6:d-1));
+  const y=mon.getFullYear(),m=String(mon.getMonth()+1).padStart(2,'0'),day=String(mon.getDate()).padStart(2,'0');
+  return`${y}-${m}-${day}`;
+}
+// Load current week key from each dept's global settings, fallback to today's Monday
+async function getCurrentWeekForDept(settingsPath){
+  try{
+    const snap=await get(ref(db,settingsPath));
+    if(snap.exists()&&snap.val().weekStart)return snap.val().weekStart;
+  }catch(e){}
+  return getMondayStr();
+}
+
 const depts={
-  stairs:{path:'tracker/v1',label:'1st Fix',color:'#3B82F6',data:null,ready:false},
-  bullnose:{path:'bullnose/v1',label:'Bullnose',color:'#A78BFA',data:null,ready:false},
-  treads:{path:'treads/v1',label:'Treads',color:'#34D399',data:null,ready:false},
+  stairs:{settingsPath:'tracker/v1',weekPath:null,label:'1st Fix',color:'#3B82F6',data:null,ready:false},
+  bullnose:{settingsPath:'bullnose/v1',weekPath:null,label:'Bullnose',color:'#A78BFA',data:null,ready:false},
+  treads:{settingsPath:'treads/v1',weekPath:null,label:'Treads',color:'#34D399',data:null,ready:false},
 };
 let sheetByDay={mon:[],tue:[],wed:[],thu:[],fri:[]};
 let chart;
@@ -405,14 +420,22 @@ function checkAllReady(){
   }
 }
 
-Object.entries(depts).forEach(([key,dept])=>{
-  onValue(ref(db,dept.path),snap=>{
-    if(snap.exists())dept.data=snap.val();
-    dept.ready=true;
-    checkAllReady();
-    rebuild();
-  },()=>{dept.ready=true;checkAllReady();});
-});
+// Load each dept's current week from their settings, then subscribe to week data
+async function initDepts(){
+  for(const [key,dept] of Object.entries(depts)){
+    const ws=await getCurrentWeekForDept(dept.settingsPath);
+    const prefixMap={stairs:'tracker',bullnose:'bullnose',treads:'treads'};
+    const prefix=prefixMap[key]||key;
+    dept.weekPath=`${prefix}/weeks/${ws}`;
+    onValue(ref(db,dept.weekPath),snap=>{
+      if(snap.exists())dept.data=snap.val();
+      dept.ready=true;
+      checkAllReady();
+      rebuild();
+    },()=>{dept.ready=true;checkAllReady();});
+  }
+}
+initDepts();
 
 // Force show after 5 seconds
 setTimeout(()=>{
